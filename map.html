@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>沖繩自駕互動地圖 10/9–10/13</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f8fb;--card:#fff;--tx:#1d2b36;--sub:#5d6f7d;--sea:#cfe9f7;--land:#e9f2dd;--ln:#d5dfe6;--ac:#0277bd}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181e;--card:#1a252d;--tx:#e6edf2;--sub:#9db0be;--sea:#16303f;--land:#26382a;--ln:#2d3d48;--ac:#4fc3f7}}
+:root[data-theme="dark"]{--bg:#10181e;--card:#1a252d;--tx:#e6edf2;--sub:#9db0be;--sea:#16303f;--land:#26382a;--ln:#2d3d48;--ac:#4fc3f7}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+header{padding:16px 16px 4px}h1{margin:0;font-size:20px}header p{margin:2px 0 0;color:var(--sub);font-size:13px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 16px}
+.tabs button{flex:0 0 auto;border:0;border-radius:20px;padding:8px 14px;font:inherit;font-weight:700;background:var(--card);color:var(--tx);border:2px solid var(--ln);cursor:pointer}
+.tabs button.on{color:#fff;border-color:transparent}
+.sum{margin:0 16px;padding:12px 14px;background:var(--card);border-radius:14px;border:1px solid var(--ln);display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.sum b{font-size:16px;flex:1 1 100%}.chip{font-size:13px;color:var(--sub)}
+.btn{display:inline-block;text-decoration:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:14px;color:#fff;background:var(--ac)}
+.btn.o{background:transparent;color:var(--ac);border:2px solid var(--ac);padding:6px 10px}
+.grid{display:grid;gap:12px;padding:12px 16px;grid-template-columns:1fr}
+@media(min-width:860px){.grid{grid-template-columns:minmax(340px,5fr) 6fr}}
+.mapbox{background:var(--sea);border-radius:14px;border:1px solid var(--ln);overflow:hidden}
+svg{display:block;width:100%;height:auto;max-height:78vh}
+.mk{cursor:pointer}.mk text{font:700 10px sans-serif;fill:#fff;pointer-events:none}
+.list{display:flex;flex-direction:column;gap:8px}
+.st{background:var(--card);border:2px solid var(--ln);border-radius:14px;padding:10px 12px;cursor:pointer}
+.st.sel{border-color:var(--c)}
+.st h3{margin:0;font-size:15px;display:flex;gap:8px;align-items:center}
+.n{flex:0 0 auto;width:24px;height:24px;border-radius:50%;color:#fff;font-size:12px;display:grid;place-items:center;background:var(--c)}
+.t{margin-left:auto;font-size:12px;color:var(--sub);font-weight:400}
+.mt{font-size:13px;color:var(--sub);margin:4px 0 0}
+.dt{display:none;margin-top:8px}.st.sel .dt{display:block}
+.dt p{margin:4px 0}.ac{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.tbl{margin:4px 16px 24px;background:var(--card);border-radius:14px;border:1px solid var(--ln);padding:12px 14px}
+.tbl table{width:100%;border-collapse:collapse;font-size:13px}.tbl td,.tbl th{padding:6px 4px;border-bottom:1px solid var(--ln);text-align:left}
+.tbl th:nth-child(n+2),.tbl td:nth-child(n+2){text-align:right}
+.note{font-size:12px;color:var(--sub);margin:8px 0 0}
+</style></head><body>
+<header><h1>🌺 沖繩自駕互動地圖</h1><p>10/9(五)–10/13(二)・點標記或卡片看詳情,按「Google 導航」直接開啟導航</p></header>
+<div class="tabs" id="tabs"></div>
+<div class="sum" id="sum"></div>
+<div class="grid"><div class="mapbox"><svg id="svg" viewBox="0 0 360 450" role="img" aria-label="沖繩本島示意圖"></svg></div><div class="list" id="list"></div></div>
+<div class="tbl"><b>🛣️ 預估 ETC 與車程總表</b><table id="tb"></table>
+<p class="note">• ETC:那霸–許田全線約 ¥1,040(沖繩道 ETC 特別割引適用時;無割引為 ¥1,610,2026 年是否延續請向租車公司確認)。其餘區間為我的粗估(標「約」),實際以租車公司帳單為準,另加 ETC 卡租借費(各家約 ¥330 起)。<br>• 車程為不含塞車的預估,三連休與祭典日請多抓 20–40 分鐘。<br>• 地圖為示意圖(非精確座標),導航按鈕以名稱搜尋 Google 地圖(有停車場的點會優先導向停車場),出發前請確認終點位置正確。</p></div>
+<script>
+const COL=["#00897B","#1E88E5","#F57C00","#D81B60","#6A1B9A"];
+const DAYS=[
+["D1 10/9","北部・古宇利島與今歸仁","🍤 古宇利蝦料理、🐖 阿古豬"],
+["D2 10/10","中部・恩納村","🐟 海人鮮魚料理、🐖 島豬料理"],
+["D3 10/11","青洞浮潛 + 那霸大綱挽","🍜 沖繩麵、🍖 那霸燒肉"],
+["D4 10/12","Rycom + 東海岸","⚡ 寶可夢中心、🌮 美國村塔可飯"],
+["D5 10/13","達摩寺・波上宮・那霸","🐟 牧志市場(1F 買、2F 代煮)、🍩 沙翁"]];
+// [day,name,query,lat,lng,time,minFromPrev,etcYen,note,mode]
+const S=[
+[0,"OTS 租車取車","OTSレンタカー 那覇空港店",26.198,127.652,"09:20–11:15",0,0,"入境、領行李,搭 OTS 接駁取車(約 1 小時)。IT230 09:20 抵達。分店名稱請以預約信為準。"],
+[0,"古宇利島 午餐","古宇利大橋",26.694,128.0165,"13:00",105,1040,"🍽️ 二選一:絕景食堂 文ちゃん / しらさ食堂,預留排隊時間。ETC:那霸→許田約 ¥1,040。大橋前可停車拍照。"],
+[0,"チグヌ浜","チグヌ浜 古宇利島",26.701,128.012,"14:15",5,0,"始まりの洞窟,拍照為主。"],
+[0,"古宇利海洋塔","古宇利オーシャンタワー",26.6995,128.027,"15:00",5,0,"時間吃緊先砍這個。","d","古宇利オーシャンタワー 駐車場"],
+[0,"Churaumi Village 入住","Churaumi Village 沖縄",26.672,127.902,"15:45",40,0,"先到行政大樓付款,再到 3 號店辦 check-in、放行李。"],
+[0,"百年古家 大家 晚餐","百年古家 大家 名護",26.6,127.978,"17:15",30,0,"🍽️ 阿古豬。確認號碼 CGUJUY,專用停車場 17:20 前進場。","d","百年古家 大家 駐車場"],
+[0,"今歸仁超市採買","タウンプラザかねひで今帰仁桜市場",26.685,127.98,"19:00 後",30,0,"營業時間請先確認;可視體力改在隔天早上買。","d","タウンプラザかねひで今帰仁桜市場 駐車場"],
+[1,"出發:Churaumi Village 3號店","Churaumi Village 沖縄",26.672,127.902,"08:15",0,0,"D1 住宿(3 號店),退房出發。"],
+[1,"美麗海水族館","沖縄美ら海水族館",26.6943,127.8779,"08:30–12:15",20,0,"⚠️ 三連休第一天,開門前到。開館時間與海豚秀請查官網。","d","美ら海北駐車場 立体駐車場"],
+[1,"海人料理 海邦丸 午餐","海人料理 海邦丸",26.675,127.89,"12:30",10,0,"🍽️ 海鮮、鮮魚料理。"],
+[1,"部瀨名海中公園","部瀬名海中公園",26.529,127.934,"14:15",35,0,"玻璃底船 / 海中展望塔。","d","部瀬名海中公園 駐車場"],
+[1,"しまぶた屋 恩納本店 晚餐","しまぶた屋 恩納本店",26.477,127.823,"17:15",45,0,"🍽️ 島豬料理。確認號碼 TYDS76。"],
+[1,"Best Western 恩納海灘","ベストウェスタン沖縄恩納ビーチ",26.488,127.831,"19:00",10,0,"入住。"],
+[1,"虎灘散步觀星","ナビービーチ",26.485,127.828,"20:00 後",5,0,"散步、觀星。","d","ナビービーチ 駐車場"],
+[2,"出發:Best Western 恩納海灘","ベストウェスタン沖縄恩納ビーチ",26.488,127.831,"08:15",0,0,"D2 住宿,退房後前往浮潛集合點。"],
+[2,"Pink Mermaid 青洞浮潛","ピンクマーメイド 青の洞窟 シュノーケル",26.455,127.785,"09:00–12:00",10,0,"🤿 集合時間以預約信為準。浮潛取消就改逛 Rycom。"],
+[2,"Sunset Beach Hotel 寄放行李","サンセットビーチホテル 北谷",26.315,127.755,"12:50",45,0,"順路寄放行李,不用帶大包進那霸。"],
+[2,"Omoromachi 停車午餐","T Galleria Okinawa by DFS",26.2262,127.6975,"13:15",30,400,"🍽️ 沖繩麵或新都心商場美食。停車後改搭單軌。備選停車場:おもろまち四丁目。ETC 約 ¥400(走高速,可改走 58 號省道免費但較塞)。","d","T ギャラリア 沖縄 by DFS 駐車場"],
+[2,"縣廳前站 大綱挽","県庁前駅",26.2139,127.6785,"15:30–18:30",10,0,"🎌 旗頭行列、大綱挽(10/11)。確切時程請查官網,會場無停車場,搭單軌。","t"],
+[2,"那霸晚餐","那覇市 牧志 焼肉",26.214,127.689,"18:45",5,0,"🍖 燒肉(RIKIO 可改天)。","t"],
+[2,"回北谷入住","サンセットビーチホテル 北谷",26.3135,127.7545,"20:15",45,400,"建議走高速避開 58 號祭典路段。ETC 約 ¥400。美國村停車:北谷町営駐車場(美浜)優先。","d","北谷町営駐車場 美浜"],
+[3,"出發:北谷町営駐車場(美浜)","北谷町営駐車場 美浜",26.316,127.7585,"09:30",0,0,"美國村住宿,車停美浜停車場(優先)。"],
+[3,"AEON Rycom 寶可夢中心","イオンモール沖縄ライカム",26.313,127.798,"10:00",20,0,"⚡ 開店就到,1 樓 Pokémon Center。🍽️ 美食街午餐。三連休最後一天人多。"],
+[3,"海中道路","海中道路 ロードパーク",26.37,127.965,"14:15–16:00",35,0,"展望台、大泊ビーチ(可另停大泊ビーチ駐車場)。海中道路免費通行。"],
+[3,"美國村 夜景晚餐","北谷町営駐車場 美浜",26.316,127.7585,"16:15",40,0,"🌮 塔可飯、美國村晚餐,夜晚漫步。優先停北谷町営(美浜)。"],
+[4,"出發:北谷町営駐車場(美浜)","北谷町営駐車場 美浜",26.316,127.7585,"08:30–09:15",0,0,"退房、取車出發。"],
+[4,"達摩寺 西來院","だるま寺 西来院 那覇",26.218,127.719,"10:15–11:15",50,350,"開放時間請先查。ETC 約 ¥350(北谷→首里走高速)。","d","三井のリパーク 首里赤田町1丁目"],
+[4,"波上宮","波上宮",26.2229,127.6677,"11:45",25,0,"⛩️ 祈福。優先停若狹海濱公園,備選波之上立體停車場。","d","若狭海浜公園 駐車場"],
+[4,"牧志公設市場 午餐","第一牧志公設市場",26.2151,127.6893,"13:00",10,0,"🍽️ 1F 買鮮魚、2F 代煮;逛國際通最後採購。","d","タイムズ那覇まちぐゎー"],
+[4,"ENEOS 豐崎店 加油","ENEOS 豊崎",26.174,127.67,"16:45",25,0,"⛽ 最晚 17:45 前加完。"],
+[4,"還車(OTS)→ 機場","OTSレンタカー 那覇空港店",26.198,127.652,"18:30",20,0,"18:30 還車,約 19:15 到機場,21:40 IT233 起飛。"]];
+const C=[[127.67,26.08],[127.64,26.14],[127.65,26.21],[127.67,26.28],[127.7,26.34],[127.73,26.42],[127.78,26.5],[127.86,26.55],[127.9,26.62],[127.87,26.7],[127.94,26.72],[128.03,26.74],[128.14,26.82],[128.26,26.88],[128.27,26.82],[128.18,26.72],[128.1,26.6],[128.03,26.5],[127.96,26.44],[127.97,26.36],[127.95,26.29],[127.88,26.24],[127.8,26.2],[127.82,26.13],[127.76,26.07]];
+const P=(la,lo)=>[+((lo-127.6)*500).toFixed(1),+((26.92-la)*500).toFixed(1)];
+const E=encodeURIComponent,$=i=>document.getElementById(i);
+let day=0,sel=0;
+const idx=d=>S.map((s,i)=>i).filter(i=>S[i][0]==d);
+const nav=(s,k)=>`https://www.google.com/maps/dir/?api=1&destination=${E(k?s[2]:(s[10]||s[2]))}&travelmode=${s[9]=="t"?"transit":"driving"}`;
+const loc=s=>`https://www.google.com/maps/search/?api=1&query=${E(s[10]||s[2])}`;
+function dayNav(d){const q=idx(d).map(i=>S[i]).filter(s=>s[9]!="t").map(s=>[0,0,s[10]||s[2]]);
+ return `https://www.google.com/maps/dir/?api=1&origin=${E(q[0][2])}&destination=${E(q[q.length-1][2])}&waypoints=${E(q.slice(1,-1).map(s=>s[2]).join("|"))}&travelmode=driving`}
+function tot(d){let m=0,e=0;idx(d).forEach(i=>{m+=S[i][6];e+=S[i][7]});return[m,e]}
+function draw(){
+ const c=COL[day],ids=idx(day);
+ if(!ids.includes(sel))sel=ids[0];
+ $("tabs").innerHTML=DAYS.map((x,i)=>`<button class="${i==day?"on":""}" style="${i==day?"background:"+COL[i]:""}" onclick="day=${i};sel=0;draw()">${x[0]}</button>`).join("");
+ const [m,e]=tot(day);
+ $("sum").innerHTML=`<b style="color:${c}">${DAYS[day][1]}</b><span class="chip">⏱ 車程合計約 ${Math.floor(m/60)} 小時 ${m%60} 分</span><span class="chip">🛣️ ETC 約 ¥${e.toLocaleString()}</span><span class="chip">${DAYS[day][2]}</span><a class="btn" style="background:${c}" target="_blank" rel="noopener" href="${dayNav(day)}">🧭 整日導航(Google)</a>`;
+ let g=`<rect width="360" height="450" fill="var(--sea)"/><path d="M${C.map(p=>P(p[1],p[0]).join(",")).join("L")}Z" fill="var(--land)" stroke="var(--ln)" stroke-width="2"/>`;
+ g+=`<text x="285" y="30" font-size="11" fill="var(--sub)">國頭</text><text x="190" y="200" font-size="11" fill="var(--sub)">中部</text><text x="95" y="372" font-size="11" fill="var(--sub)">那霸</text><text x="10" y="440" font-size="9" fill="var(--sub)">示意圖</text>`;
+ S.forEach((s,i)=>{if(s[0]!=day){const[x,y]=P(s[3],s[4]);g+=`<circle cx="${x}" cy="${y}" r="3" fill="${COL[s[0]]}" opacity=".3"/>`}});
+ const pts=ids.map(i=>P(S[i][3],S[i][4]));
+ g+=`<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${c}" stroke-width="3" stroke-dasharray="6 4" opacity=".8"/>`;
+ ids.forEach((i,k)=>{const[x,y]=pts[k],on=i==sel;g+=`<g class="mk" onclick="sel=${i};draw();document.getElementById('s${i}').scrollIntoView({block:'nearest',behavior:'smooth'})"><circle cx="${x}" cy="${y}" r="${on?13:10}" fill="${c}" stroke="#fff" stroke-width="2"/><text x="${x}" y="${y+3.5}" text-anchor="middle">${k+1}</text></g>`});
+ $("svg").innerHTML=g;
+ $("list").innerHTML=ids.map((i,k)=>{const s=S[i],on=i==sel;
+  return `<div class="st ${on?"sel":""}" id="s${i}" style="--c:${c}" onclick="sel=${i};draw()"><h3><span class="n">${k+1}</span>${s[1]}<span class="t">${s[5]}</span></h3>
+  <div class="mt">${k?`⏱ 約 ${s[6]} 分${s[7]?`・🛣️ ETC 約 ¥${s[7]}`:""}`:"起點"}</div>
+  <div class="dt"><p>${s[8]}</p>${s[10]?`<p>🅿️ 停車:${s[10]}</p>`:""}<div class="ac"><a class="btn" style="background:${c}" target="_blank" rel="noopener" href="${nav(s)}" onclick="event.stopPropagation()">${s[10]?"🅿️ 導航到停車場":"🧭 Google 導航"}</a>${s[10]?`<a class="btn o" style="color:${c};border-color:${c}" target="_blank" rel="noopener" href="${nav(s,1)}" onclick="event.stopPropagation()">🧭 導航到景點</a>`:""}<a class="btn o" style="color:${c};border-color:${c}" target="_blank" rel="noopener" href="${loc(s)}" onclick="event.stopPropagation()">📍 地圖</a></div></div></div>`}).join("");
+}
+let rows="<tr><th>日期</th><th>車程</th><th>ETC 約</th></tr>",T=[0,0];
+DAYS.forEach((x,d)=>{const[m,e]=tot(d);T[0]+=m;T[1]+=e;rows+=`<tr><td>${x[0]}</td><td>${Math.floor(m/60)}h${String(m%60).padStart(2,"0")}</td><td>¥${e.toLocaleString()}</td></tr>`});
+rows+=`<tr><th>合計</th><th>${Math.floor(T[0]/60)}h${String(T[0]%60).padStart(2,"0")}</th><th>¥${T[1].toLocaleString()}</th></tr>`;
+$("tb").innerHTML=rows;draw();
+</script></body></html>
